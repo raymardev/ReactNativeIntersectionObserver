@@ -55,7 +55,9 @@ describe('Intersection Observer Hooks', () => {
     const packagePath = path.join(__dirname, '../../package.json');
     const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
 
-    expect(packageJson.name).toBe('react-native-intersection-observer');
+    expect(packageJson.name).toBe(
+      '@raymardev/react-native-intersection-observer'
+    );
     expect(packageJson.main).toBe('dist/index.js');
     expect(packageJson.types).toBe('dist/index.d.ts');
     expect(packageJson.peerDependencies).toBeDefined();

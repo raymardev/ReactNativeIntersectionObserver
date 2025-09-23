@@ -9,7 +9,7 @@ This document provides comprehensive examples of how to use `react-native-inters
 ```tsx
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import { useScrollToBottom } from 'react-native-intersection-observer';
+import { useScrollToBottom } from '@raymardev/react-native-intersection-observer';
 
 export default function BasicExample() {
   const { isIntersecting, ref, handleScroll } = useScrollToBottom(50, {
@@ -43,7 +43,7 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
-import { useScrollToBottom } from 'react-native-intersection-observer';
+import { useScrollToBottom } from '@raymardev/react-native-intersection-observer';
 
 interface Item {
   id: number;
@@ -127,7 +127,7 @@ import {
   StyleSheet,
   RefreshControl,
 } from 'react-native';
-import { useScrollToTop } from 'react-native-intersection-observer';
+import { useScrollToTop } from '@raymardev/react-native-intersection-observer';
 
 export default function PullToRefreshExample() {
   const [refreshing, setRefreshing] = useState(false);
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
 ```tsx
 import React, { useRef, useState } from 'react';
 import { ScrollView, View, Text, StyleSheet } from 'react-native';
-import { useElementIntersection } from 'react-native-intersection-observer';
+import { useElementIntersection } from '@raymardev/react-native-intersection-observer';
 
 export default function ElementTrackingExample() {
   const targetRef = useRef<View>(null);
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
 ```tsx
 import React from 'react';
 import { ScrollView, View, Text, StyleSheet } from 'react-native';
-import { useIntersectionObserver } from 'react-native-intersection-observer';
+import { useIntersectionObserver } from '@raymardev/react-native-intersection-observer';
 
 export default function MultiPositionExample() {
   const topObserver = useIntersectionObserver({
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
 ```tsx
 import React, { useState } from 'react';
 import { SectionList, View, Text, StyleSheet } from 'react-native';
-import { useScrollToBottom } from 'react-native-intersection-observer';
+import { useScrollToBottom } from '@raymardev/react-native-intersection-observer';
 
 interface SectionData {
   title: string;

@@ -30,7 +30,7 @@ The main hook that provides intersection detection functionality for React Nativ
 #### Example
 
 ```tsx
-import { useIntersectionObserver } from 'react-native-intersection-observer';
+import { useIntersectionObserver } from '@raymardev/react-native-intersection-observer';
 
 const MyComponent = () => {
   const { isIntersecting, ref, handleScroll } = useIntersectionObserver({
@@ -66,7 +66,7 @@ Detects when the user has scrolled to the bottom of the scroll view.
 #### Example
 
 ```tsx
-import { useScrollToBottom } from 'react-native-intersection-observer';
+import { useScrollToBottom } from '@raymardev/react-native-intersection-observer';
 
 const { isIntersecting, ref, handleScroll } = useScrollToBottom(50, {
   type: 'flatlist',
@@ -91,7 +91,7 @@ Detects when the user has scrolled to the top of the scroll view.
 #### Example
 
 ```tsx
-import { useScrollToTop } from 'react-native-intersection-observer';
+import { useScrollToTop } from '@raymardev/react-native-intersection-observer';
 
 const { isIntersecting, ref, handleScroll } = useScrollToTop(10, {
   callbacks: {
@@ -115,7 +115,7 @@ Detects when the user has scrolled to the center of the scroll view.
 #### Example
 
 ```tsx
-import { useScrollToCenter } from 'react-native-intersection-observer';
+import { useScrollToCenter } from '@raymardev/react-native-intersection-observer';
 
 const { isIntersecting, ref, handleScroll } = useScrollToCenter(100, {
   callbacks: {
@@ -139,7 +139,7 @@ Detects when a specific element becomes visible in the scroll view.
 #### Example
 
 ```tsx
-import { useElementIntersection } from 'react-native-intersection-observer';
+import { useElementIntersection } from '@raymardev/react-native-intersection-observer';
 
 const elementRef = useRef<View>(null);
 const { isIntersecting, ref, handleScroll, handleElementLayout } =

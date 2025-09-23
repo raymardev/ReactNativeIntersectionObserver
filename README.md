@@ -29,13 +29,13 @@ A powerful and flexible React Native hook for detecting scroll intersections wit
 ## 📦 Installation
 
 ```bash
-npm install react-native-intersection-observer
+npm install @raymardev/react-native-intersection-observer
 ```
 
 or
 
 ```bash
-yarn add react-native-intersection-observer
+yarn add @raymardev/react-native-intersection-observer
 ```
 
 ### Requirements
@@ -49,7 +49,7 @@ yarn add react-native-intersection-observer
 ```tsx
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import { useScrollToBottom } from 'react-native-intersection-observer';
+import { useScrollToBottom } from '@raymardev/react-native-intersection-observer';
 
 export default function App() {
   const { isIntersecting, ref, handleScroll } = useScrollToBottom(50, {
@@ -173,7 +173,7 @@ return (
 ```tsx
 import React, { useState, useCallback } from 'react';
 import { FlatList, View, Text, ActivityIndicator } from 'react-native';
-import { useScrollToBottom } from 'react-native-intersection-observer';
+import { useScrollToBottom } from '@raymardev/react-native-intersection-observer';
 
 export default function InfiniteScrollList() {
   const [data, setData] = useState(
@@ -231,7 +231,7 @@ export default function InfiniteScrollList() {
 ```tsx
 import React from 'react';
 import { ScrollView, View, Text } from 'react-native';
-import { useScrollToTop } from 'react-native-intersection-observer';
+import { useScrollToTop } from '@raymardev/react-native-intersection-observer';
 
 export default function PullToRefresh() {
   const { isIntersecting, ref, handleScroll } = useScrollToTop(10, {
@@ -260,7 +260,7 @@ export default function PullToRefresh() {
 ```tsx
 import React, { useRef } from 'react';
 import { ScrollView, View, Text } from 'react-native';
-import { useElementIntersection } from 'react-native-intersection-observer';
+import { useElementIntersection } from '@raymardev/react-native-intersection-observer';
 
 export default function ElementTracking() {
   const targetRef = useRef<View>(null);
@@ -316,7 +316,7 @@ import {
   useIntersectionObserver,
   UseIntersectionObserverOptions,
   UseIntersectionObserverReturn,
-} from 'react-native-intersection-observer';
+} from '@raymardev/react-native-intersection-observer';
 
 const options: UseIntersectionObserverOptions = {
   threshold: 50,
