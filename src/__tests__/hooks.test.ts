@@ -28,7 +28,18 @@ describe('Intersection Observer Hooks', () => {
     const distFilesExist =
       fs.existsSync(distIndexPath) && fs.existsSync(distTypesPath);
 
+    // At least one set of files should exist
     expect(sourceFilesExist || distFilesExist).toBe(true);
+
+    // Log for debugging in CI/CD
+    if (!sourceFilesExist && !distFilesExist) {
+      console.log('Source files exist:', sourceFilesExist);
+      console.log('Dist files exist:', distFilesExist);
+      console.log('Index path:', indexPath);
+      console.log('Types path:', typesPath);
+      console.log('Dist index path:', distIndexPath);
+      console.log('Dist types path:', distTypesPath);
+    }
   });
 
   it('should have proper exports structure', () => {
@@ -109,6 +120,13 @@ describe('Intersection Observer Hooks', () => {
       // If source files don't exist, check if dist files exist (compilation succeeded)
       const distIndexPath = path.join(__dirname, '../../dist/index.js');
       const distTypesPath = path.join(__dirname, '../../dist/index.d.ts');
+
+      // Log for debugging in CI/CD
+      console.log('Source files not found, checking dist files...');
+      console.log('Dist index path:', distIndexPath);
+      console.log('Dist types path:', distTypesPath);
+      console.log('Dist index exists:', fs.existsSync(distIndexPath));
+      console.log('Dist types exists:', fs.existsSync(distTypesPath));
 
       expect(fs.existsSync(distIndexPath)).toBe(true);
       expect(fs.existsSync(distTypesPath)).toBe(true);
