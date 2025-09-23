@@ -7,7 +7,8 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "__docs__"
   ],
   "scripts": {
     "build": "tsc",
@@ -34,7 +35,7 @@
     "detection",
     "visibility"
   ],
-  "author": "Ray Martin <raymardev>",
+  "author": "Ray Martin <raymardev> (https://raymartin.es)",
   "license": "MIT",
   "repository": {
     "type": "git",

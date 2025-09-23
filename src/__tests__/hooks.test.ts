@@ -100,9 +100,9 @@ describe('Intersection Observer Hooks', () => {
 
     const readmeContent = fs.readFileSync(readmePath, 'utf8');
     expect(readmeContent).toContain('# React Native Intersection Observer');
-    expect(readmeContent).toContain('## Installation');
-    expect(readmeContent).toContain('## Quick Start');
-    expect(readmeContent).toContain('## API Reference');
+    expect(readmeContent).toContain('## 📦 Installation');
+    expect(readmeContent).toContain('## 🚀 Quick Start');
+    expect(readmeContent).toContain('## 🔧 API Reference');
   });
 
   it('should have proper license and configuration files', () => {

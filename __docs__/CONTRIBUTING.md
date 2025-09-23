@@ -264,4 +264,8 @@ Contributors will be recognized in:
 - Release notes
 - GitHub contributors page
 
+## About the Author
+
+This library is created and maintained by [Ray Martin](https://raymartin.es), a full-stack developer specializing in React Native and modern web technologies. You can find more of his work and connect with him on his personal website.
+
 Thank you for contributing to React Native Intersection Observer! 🎉

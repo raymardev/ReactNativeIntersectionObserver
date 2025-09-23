@@ -61,11 +61,7 @@ export default function App() {
   });
 
   return (
-    <ScrollView
-      ref={ref}
-      onScroll={handleScroll}
-      scrollEventThrottle={16}
-    >
+    <ScrollView ref={ref} onScroll={handleScroll} scrollEventThrottle={16}>
       <View style={{ height: 2000 }}>
         <Text>Scroll to bottom to trigger intersection</Text>
         {isIntersecting && <Text>🎉 You reached the bottom!</Text>}
@@ -92,6 +88,7 @@ export default function App() {
 The main hook that provides intersection detection functionality.
 
 **Parameters:**
+
 - `options` (object):
   - `threshold?: number` - Distance threshold for intersection detection (default: 20)
   - `position?: 'top' | 'bottom' | 'center' | 'custom' | 'element'` - Position to detect (default: 'bottom')
@@ -101,6 +98,7 @@ The main hook that provides intersection detection functionality.
   - `onIntersectionChange?: (isIntersecting: boolean) => void` - Callback for any intersection change
 
 **Returns:**
+
 - `isIntersecting: boolean` - Current intersection state
 - `ref: React.RefObject<ScrollView | FlatList | SectionList>` - Ref for the scroll component
 - `handleScroll: (event: any) => void` - Scroll event handler
@@ -154,13 +152,10 @@ Detects when a specific element becomes visible in the scroll view.
 
 ```tsx
 const elementRef = useRef<View>(null);
-const { isIntersecting, ref, handleScroll, handleElementLayout } = useElementIntersection(
-  elementRef,
-  50,
-  {
+const { isIntersecting, ref, handleScroll, handleElementLayout } =
+  useElementIntersection(elementRef, 50, {
     onIntersect: () => console.log('Element is visible!'),
-  }
-);
+  });
 
 return (
   <ScrollView ref={ref} onScroll={handleScroll}>
@@ -181,21 +176,23 @@ import { FlatList, View, Text, ActivityIndicator } from 'react-native';
 import { useScrollToBottom } from 'react-native-intersection-observer';
 
 export default function InfiniteScrollList() {
-  const [data, setData] = useState(Array.from({ length: 20 }, (_, i) => ({ id: i, text: `Item ${i}` })));
+  const [data, setData] = useState(
+    Array.from({ length: 20 }, (_, i) => ({ id: i, text: `Item ${i}` }))
+  );
   const [loading, setLoading] = useState(false);
 
   const loadMore = useCallback(async () => {
     if (loading) return;
-    
+
     setLoading(true);
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     const newData = Array.from({ length: 10 }, (_, i) => ({
       id: data.length + i,
       text: `Item ${data.length + i}`,
     }));
-    
+
     setData(prev => [...prev, ...newData]);
     setLoading(false);
   }, [data.length, loading]);
@@ -213,9 +210,8 @@ export default function InfiniteScrollList() {
     </View>
   );
 
-  const renderFooter = () => (
-    loading ? <ActivityIndicator style={{ padding: 20 }} /> : null
-  );
+  const renderFooter = () =>
+    loading ? <ActivityIndicator style={{ padding: 20 }} /> : null;
 
   return (
     <FlatList
@@ -249,11 +245,7 @@ export default function PullToRefresh() {
   });
 
   return (
-    <ScrollView
-      ref={ref}
-      onScroll={handleScroll}
-      scrollEventThrottle={16}
-    >
+    <ScrollView ref={ref} onScroll={handleScroll} scrollEventThrottle={16}>
       <View style={{ height: 2000 }}>
         <Text>Pull down to refresh</Text>
         {isIntersecting && <Text>🔄 Ready to refresh!</Text>}
@@ -272,37 +264,34 @@ import { useElementIntersection } from 'react-native-intersection-observer';
 
 export default function ElementTracking() {
   const targetRef = useRef<View>(null);
-  
-  const { isIntersecting, ref, handleScroll, handleElementLayout } = useElementIntersection(
-    targetRef,
-    50,
-    {
+
+  const { isIntersecting, ref, handleScroll, handleElementLayout } =
+    useElementIntersection(targetRef, 50, {
       onIntersect: () => console.log('Target element is visible!'),
       onVisible: () => console.log('Target element is hidden!'),
-    }
-  );
+    });
 
   return (
     <ScrollView ref={ref} onScroll={handleScroll} scrollEventThrottle={16}>
       <View style={{ height: 1000 }}>
         <Text>Scroll down to see the target element</Text>
       </View>
-      
-      <View 
-        ref={targetRef} 
+
+      <View
+        ref={targetRef}
         onLayout={handleElementLayout}
-        style={{ 
-          height: 200, 
+        style={{
+          height: 200,
           backgroundColor: isIntersecting ? '#4CAF50' : '#FF5722',
           justifyContent: 'center',
-          alignItems: 'center'
+          alignItems: 'center',
         }}
       >
         <Text style={{ color: 'white', fontSize: 18 }}>
           {isIntersecting ? 'I am visible! 🎉' : 'I am hidden 👻'}
         </Text>
       </View>
-      
+
       <View style={{ height: 1000 }}>
         <Text>More content below</Text>
       </View>
@@ -323,10 +312,10 @@ export default function ElementTracking() {
 This library is written in TypeScript and provides full type definitions. All hooks and their parameters are fully typed for the best development experience.
 
 ```tsx
-import { 
-  useIntersectionObserver, 
+import {
+  useIntersectionObserver,
   UseIntersectionObserverOptions,
-  UseIntersectionObserverReturn 
+  UseIntersectionObserverReturn,
 } from 'react-native-intersection-observer';
 
 const options: UseIntersectionObserverOptions = {
@@ -337,6 +326,15 @@ const options: UseIntersectionObserverOptions = {
 
 const result: UseIntersectionObserverReturn = useIntersectionObserver(options);
 ```
+
+## 👨‍💻 About the Author
+
+This library is created and maintained by **[Ray Martin](https://raymartin.es)**, a full-stack developer specializing in React Native, Next.js, and modern web technologies.
+
+- 🌐 **Personal Website**: [raymartin.es](https://raymartin.es) (available in English and Spanish)
+- 💼 **Professional Profile**: Full-stack developer with expertise in enterprise-grade applications
+- 🚀 **Open Source**: Active contributor to the React Native ecosystem
+- 📧 **Contact**: Available for consulting and collaboration
 
 ## 🤝 Contributing
 
@@ -361,7 +359,7 @@ We welcome contributions! Please see our [Contributing Guide](__docs__/CONTRIBUT
 
 ## 📄 License
 
-MIT © [Ray Martin](https://github.com/raymardev)
+MIT © [Ray Martin](https://raymartin.es) • [GitHub](https://github.com/raymardev)
 
 ## 📈 Changelog
 
@@ -381,6 +379,18 @@ See [CHANGELOG.md](__docs__/CHANGELOG.md) for a complete list of changes.
 
 **⭐ Star this repository if you find it helpful!**
 
-Made with ❤️ by [Ray Martin](https://github.com/raymardev)
+---
+
+### 🌟 Connect with the Author
+
+**Ray Martin** • Full-Stack Developer
+
+[![Website](https://img.shields.io/badge/Website-raymartin.es-blue?style=for-the-badge&logo=firefox)](https://raymartin.es)
+[![GitHub](https://img.shields.io/badge/GitHub-raymardev-black?style=for-the-badge&logo=github)](https://github.com/raymardev)
+[![NPM](https://img.shields.io/badge/NPM-raymardev-red?style=for-the-badge&logo=npm)](https://www.npmjs.com/~raymardev)
+
+_Available for consulting and collaboration_ • _Website available in English and Spanish_
+
+Made with ❤️ by [Ray Martin](https://raymartin.es)
 
 </div>

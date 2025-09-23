@@ -8,12 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Comprehensive documentation in `__docs__/` folder
 - API reference documentation
 - Contributing guidelines
 - Detailed examples and use cases
 
 ### Changed
+
 - Improved README.md with better structure and examples
 - Enhanced TypeScript type definitions
 - Updated build configuration for better compatibility
@@ -21,11 +23,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2024-01-15
 
 ### Added
+
 - Initial release of `react-native-intersection-observer`
 - Core `useIntersectionObserver` hook with full functionality
 - Convenience hooks:
   - `useScrollToBottom` - Detect when user scrolls to bottom
-  - `useScrollToTop` - Detect when user scrolls to top  
+  - `useScrollToTop` - Detect when user scrolls to top
   - `useScrollToCenter` - Detect when user scrolls to center
   - `useElementIntersection` - Track specific element visibility
 - Support for multiple scroll components:
@@ -64,6 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Changelog
 
 ### Technical Details
+
 - **Dependencies**: React 16.8+, React Native 0.60+
 - **TypeScript**: Full type safety with exported types
 - **Testing**: Jest with comprehensive test coverage
@@ -72,12 +76,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CI/CD**: GitHub Actions for automated testing and publishing
 
 ### Performance
+
 - Optimized for 60fps scroll performance
 - Minimal re-renders through state change detection
 - Efficient memory usage
 - Configurable scroll event throttling
 
 ### Examples Included
+
 - Basic scroll detection
 - Infinite scroll implementation
 - Pull-to-refresh detection
@@ -113,7 +119,7 @@ No security issues reported in this release.
 
 ## Contributors
 
-- **Ray Martin** - Initial implementation and documentation
+- **Ray Martin** - Initial implementation and documentation ([raymartin.es](https://raymartin.es))
 - **Community** - Feedback and suggestions
 
 ## Acknowledgments
@@ -126,6 +132,7 @@ No security issues reported in this release.
 ---
 
 For more information about this release, please see:
+
 - [README.md](../README.md)
 - [API Documentation](API.md)
 - [Examples](EXAMPLES.md)
