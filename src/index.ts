@@ -449,11 +449,13 @@ export function useIntersectionObserver<
    */
   const selectRect = useCallback((): ElementLayout | null => {
     const measured = measuredRectRef.current;
-    if (
-      measured &&
-      (measureStateRef.current !== 'unsupported' ||
-        legacyRectRef.current === null)
-    ) {
+    // A rectangle measured against the scroll container always wins over the
+    // parent-relative onLayout one. Giving up on measurement does not make the
+    // last good content-space rectangle wrong: a measureLayout failure spree is
+    // usually a transient detach (a list recycling or re-parenting the row), and
+    // preferring onLayout coordinates there would silently answer from the wrong
+    // origin for the rest of the component's life.
+    if (measured) {
       return measured;
     }
     if (
@@ -1051,6 +1053,12 @@ export function useIntersectionObserver<
     const declineOwnership = (): void => {
       if (handedOff) {
         rearmScrollPath();
+        // `nativeHandoffRef` is already cleared above, so this is the point at
+        // which the scroll path may answer again. Re-evaluating here is what
+        // keeps the documented "an option change applies immediately" promise:
+        // without it a change that tears the observer down in the same commit
+        // would leave `isIntersecting` stale until the next scroll event.
+        reevaluate();
       }
     };
 
@@ -1151,6 +1159,7 @@ export function useIntersectionObserver<
     nativeEpoch,
     position,
     rearmScrollPath,
+    reevaluate,
     strategy,
     threshold,
     warn,

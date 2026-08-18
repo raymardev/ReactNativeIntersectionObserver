@@ -383,6 +383,34 @@ describe('measured element geometry', () => {
     expect(warnSpy).not.toHaveBeenCalled();
   });
 
+  it('does not resurrect an unmounted view from its onLayout rectangle', () => {
+    // The sibling case above leaves an onLayout rectangle that is out of view
+    // anyway, so it cannot tell whether the rectangle was dropped. Here the
+    // parent-relative rectangle (350..450) *is* inside the viewport after the
+    // unmount, so a rectangle left behind would report the ghost as visible
+    // again on the very next scroll event.
+    const s = spies();
+    const measureLayout = respondWith([0, 1000, 300, 100]);
+    const element = elementRef(measureLayout);
+    const { result } = observe({ position: 'element', element, ...s });
+
+    attachScrollRef(result, scrollInstance({}));
+    fireLayout(result, { x: 0, y: 350, width: 300, height: 100 });
+    fireScroll(result, { y: 300 });
+    expect(result.current.isIntersecting).toBe(true);
+    expect(s.onIntersect).toHaveBeenCalledTimes(1);
+
+    (element as { current: unknown }).current = null;
+    fireScroll(result, { y: 301 });
+    expect(result.current.isIntersecting).toBe(false);
+    expect(s.onVisible).toHaveBeenCalledTimes(1);
+
+    // The event after the unmount is the one that would bring the ghost back.
+    fireScroll(result, { y: 302 });
+    expect(result.current.isIntersecting).toBe(false);
+    expect(s.onIntersect).toHaveBeenCalledTimes(1);
+  });
+
   it('measures again when the tracked view is mounted a second time', () => {
     const measureLayout = respondWith([0, 1000, 300, 100], [0, 400, 300, 100]);
     const element = elementRef(measureLayout);
@@ -719,10 +747,40 @@ describe('measurement failure ladder', () => {
     expect(result.current.isIntersecting).toBe(true);
   });
 
-  it('falls back to the onLayout rectangle once measurement is given up on', () => {
-    // Three consecutive failures print "Falling back to onLayout coordinates",
-    // so that is what has to happen: after a re-parent out of the scroll
-    // container the content-space rectangle is not the better estimate any more.
+  it('falls back to the onLayout rectangle when measurement never succeeds', () => {
+    // The "falling back to onLayout coordinates" advisory is aimed at the case
+    // where measureLayout never answered at all, so there is no content-space
+    // rectangle to prefer. That is the only case in which onLayout wins.
+    const measureLayout = jest.fn(
+      (_reference: unknown, _onSuccess: Success, onFail?: () => void) => {
+        onFail?.();
+      }
+    );
+    const element = elementRef(measureLayout);
+    const { result } = observe({ position: 'element', element, threshold: 0 });
+
+    attachScrollRef(result, scrollInstance({}));
+    for (let i = 0; i < 3; i += 1) {
+      fireLayout(result, { x: 0, y: 100, width: 300, height: 100 });
+    }
+    expect(String(warnSpy.mock.calls[0][0])).toContain(
+      'measurement kept failing'
+    );
+
+    // Nothing was ever measured, so the onLayout rectangle (100..200) decides.
+    fireScroll(result, { y: 150 });
+    expect(result.current.isIntersecting).toBe(true);
+
+    fireScroll(result, { y: 900 });
+    expect(result.current.isIntersecting).toBe(false);
+  });
+
+  it('keeps the measured rectangle when measurement later gives up', () => {
+    // Giving up on measurement does not invalidate the rectangle already
+    // measured against the scroll container. A failure spree is usually a
+    // transient detach (a list recycling the row), and preferring the
+    // parent-relative onLayout rectangle here would answer from the wrong
+    // origin for the rest of the component's life.
     let fail = false;
     const measureLayout = jest.fn(
       (_reference: unknown, onSuccess: Success, onFail?: () => void) => {
@@ -734,25 +792,32 @@ describe('measurement failure ladder', () => {
       }
     );
     const element = elementRef(measureLayout);
-    const { result } = observe({ position: 'element', element, threshold: 0 });
+    const s = spies();
+    const { result } = observe({
+      position: 'element',
+      element,
+      threshold: 0,
+      ...s,
+    });
 
     attachScrollRef(result, scrollInstance({}));
     fireLayout(result, { x: 0, y: 100, width: 300, height: 100 });
     fireScroll(result, { y: 300 });
     expect(result.current.isIntersecting).toBe(true);
+    expect(s.onIntersect).toHaveBeenCalledTimes(1);
 
     fail = true;
     for (let i = 0; i < 3; i += 1) {
       fireLayout(result, { x: 0, y: 100, width: 300, height: 100 });
     }
-    expect(String(warnSpy.mock.calls[0][0])).toContain(
-      'measurement kept failing'
-    );
 
-    // The onLayout rectangle (y=100) is far above the viewport at this offset;
-    // the abandoned measured one (y=1000) would still be inside it.
+    // The measured rectangle (1000..1100) still decides. The onLayout one
+    // (100..200) would report false here, and would have flipped again on the
+    // way back, firing a phantom onIntersect.
     fireScroll(result, { y: 301 });
-    expect(result.current.isIntersecting).toBe(false);
+    expect(result.current.isIntersecting).toBe(true);
+    expect(s.onIntersect).toHaveBeenCalledTimes(1);
+    expect(s.onVisible).not.toHaveBeenCalled();
   });
 
   it('gives up immediately, and once, on a ref that is not a native view', () => {
