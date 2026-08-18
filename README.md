@@ -300,6 +300,58 @@ export default function ElementTracking() {
 }
 ```
 
+## 🧭 How this relates to React Native's own APIs
+
+React Native covers part of this ground already, and it is worth knowing which
+tool fits your case:
+
+- **`FlatList.onEndReached`** is the better choice for plain "load the next page"
+  infinite scroll. It works with virtualization and needs no `onScroll` wiring.
+- **`onViewableItemsChanged` + `viewabilityConfig`** is the better choice for
+  tracking which *list items* are visible, and it offers percentage thresholds
+  and `minimumViewTime`, which this library does not.
+- **`IntersectionObserver`** landed natively in React Native 0.83, but only at the
+  canary release level behind a feature flag — not in stable React Native, and not
+  in Expo.
+
+What this library adds is scroll-**position** detection — top, bottom, center and
+custom predicates over the scroll geometry — which the Intersection Observer model
+does not express, plus element tracking that works on stable React Native today.
+When the platform observer is present it can be used for element tracking via the
+`strategy` option; see [the API reference](__docs__/API.md#native-intersectionobserver).
+
+> **Naming note:** `@react-navigation/native` also exports a `useScrollToTop`, and
+> it does the opposite of this one — it *scrolls* to the top, while this one
+> *detects* the top. If you use both, import one under an alias.
+
+## 📐 Element tracking accuracy
+
+`onLayout` reports coordinates relative to the tracked view's **parent**, not to
+the scroll content, so those two only agree when the view is a direct child of the
+scroll view. `useElementIntersection` therefore measures the view against the
+scroll container itself and falls back to `onLayout` only when that is impossible.
+
+For this to work, attach the hook's `ref` to your scroll component and pass the
+tracked view's ref as `element`. Nested elements are then measured correctly:
+
+```tsx
+const targetRef = useRef<View>(null);
+const { isIntersecting, ref, handleScroll, handleElementLayout } =
+  useElementIntersection(targetRef, 50);
+
+return (
+  <ScrollView ref={ref} onScroll={handleScroll} scrollEventThrottle={16}>
+    <View style={{ padding: 24 }}>
+      {/* Nested as deeply as you like. */}
+      <View ref={targetRef} onLayout={handleElementLayout} />
+    </View>
+  </ScrollView>
+);
+```
+
+Call the returned `measureElement()` after any layout change the hook cannot
+observe on its own.
+
 ## ⚡ Performance Considerations
 
 - Use `scrollEventThrottle={16}` for smooth 60fps scroll events
