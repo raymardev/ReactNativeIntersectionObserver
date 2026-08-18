@@ -2,9 +2,9 @@
 
 <div align="center">
 
-![npm version](https://img.shields.io/npm/v/react-native-intersection-observer)
-![npm downloads](https://img.shields.io/npm/dm/react-native-intersection-observer)
-![License](https://img.shields.io/npm/l/react-native-intersection-observer)
+![npm version](https://img.shields.io/npm/v/%40raymardev%2Freact-native-intersection-observer)
+![npm downloads](https://img.shields.io/npm/dm/%40raymardev%2Freact-native-intersection-observer)
+![License](https://img.shields.io/npm/l/%40raymardev%2Freact-native-intersection-observer)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue)
 ![React Native](https://img.shields.io/badge/React%20Native-0.60%2B-lightblue)
 
@@ -100,7 +100,7 @@ The main hook that provides intersection detection functionality.
 **Returns:**
 
 - `isIntersecting: boolean` - Current intersection state
-- `ref: React.RefObject<ScrollView | FlatList | SectionList>` - Ref for the scroll component
+- `ref: React.RefObject<T | null>` - Ref for the scroll component. `T` defaults to `ScrollView`; pass a type argument to attach it to a list, e.g. `useIntersectionObserver<FlatList<Item>>({ ... })`
 - `handleScroll: (event: any) => void` - Scroll event handler
 - `handleElementLayout: (event: any) => void` - Layout handler for element positioning
 - `reset: () => void` - Reset intersection state

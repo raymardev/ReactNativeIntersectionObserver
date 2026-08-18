@@ -10,7 +10,7 @@ The main hook that provides intersection detection functionality for React Nativ
 
 | Parameter                      | Type                                                     | Default     | Description                                                 |
 | ------------------------------ | -------------------------------------------------------- | ----------- | ----------------------------------------------------------- |
-| `options.threshold`            | `number`                                                 | `20`        | Distance threshold in pixels for intersection detection     |
+| `options.threshold`            | `number`                                                 | `20`        | Distance threshold in density-independent points (dp)        |
 | `options.position`             | `'top' \| 'bottom' \| 'center' \| 'custom' \| 'element'` | `'bottom'`  | Position where intersection should be detected              |
 | `options.element`              | `React.RefObject<View \| null>`                          | `undefined` | Element ref for position: 'element'                         |
 | `options.onIntersect`          | `() => void`                                             | `undefined` | Callback when intersection starts (element becomes visible) |
@@ -22,7 +22,7 @@ The main hook that provides intersection detection functionality for React Nativ
 | Property              | Type                                                     | Description                            |
 | --------------------- | -------------------------------------------------------- | -------------------------------------- |
 | `isIntersecting`      | `boolean`                                                | Current intersection state             |
-| `ref`                 | `React.RefObject<ScrollView \| FlatList \| SectionList>` | Ref for the scroll component           |
+| `ref`                 | `React.RefObject<T \| null>`                             | Ref for the scroll component (`T` defaults to `ScrollView`) |
 | `handleScroll`        | `(event: any) => void`                                   | Scroll event handler                   |
 | `handleElementLayout` | `(event: any) => void`                                   | Layout handler for element positioning |
 | `reset`               | `() => void`                                             | Reset intersection state               |
@@ -182,7 +182,7 @@ interface UseIntersectionObserverOptions {
 ```tsx
 interface UseIntersectionObserverReturn {
   isIntersecting: boolean;
-  ref: React.RefObject<ScrollView | FlatList | SectionList>;
+  ref: React.RefObject<T | null>;
   handleScroll: (event: any) => void;
   handleElementLayout: (event: any) => void;
   reset: () => void;

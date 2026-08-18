@@ -1,6 +1,6 @@
 # Examples
 
-This document provides comprehensive examples of how to use `react-native-intersection-observer` in various scenarios.
+This document provides comprehensive examples of how to use `@raymardev/react-native-intersection-observer` in various scenarios.
 
 ## Basic Usage
 
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
 ### Pull-to-Refresh Detection
 
 ```tsx
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   ScrollView,
   View,
@@ -510,9 +510,7 @@ const { isIntersecting, ref, handleScroll } = useScrollToBottom(100, {
 ```tsx
 const { isIntersecting } = useIntersectionObserver({
   position: 'bottom',
-  callbacks: {
-    onIntersect: () => trackEvent('user_reached_bottom'),
-  },
+  onIntersect: () => trackEvent('user_reached_bottom'),
 });
 ```
 

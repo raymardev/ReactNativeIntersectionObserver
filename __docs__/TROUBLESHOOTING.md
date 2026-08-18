@@ -1,6 +1,6 @@
 # Troubleshooting
 
-This guide helps you resolve common issues when using `react-native-intersection-observer`.
+This guide helps you resolve common issues when using `@raymardev/react-native-intersection-observer`.
 
 ## Table of Contents
 
@@ -232,13 +232,13 @@ This guide helps you resolve common issues when using `react-native-intersection
 
    ```tsx
    // Correct imports
-   import { useIntersectionObserver } from 'react-native-intersection-observer';
-   import type { UseIntersectionObserverOptions } from 'react-native-intersection-observer';
+   import { useIntersectionObserver } from '@raymardev/react-native-intersection-observer';
+   import type { UseIntersectionObserverOptions } from '@raymardev/react-native-intersection-observer';
    ```
 
 2. **Verify package installation**:
    ```bash
-   npm list react-native-intersection-observer
+   npm list @raymardev/react-native-intersection-observer
    ```
 
 ## Platform-Specific Issues
@@ -290,13 +290,20 @@ This guide helps you resolve common issues when using `react-native-intersection
    <StatusBar barStyle="dark-content" backgroundColor="#fff" />;
    ```
 
-2. **Handle different screen densities**:
+2. **Do not scale the threshold by pixel density**:
+
+   Every metric React Native reports on a scroll event — `contentOffset`,
+   `layoutMeasurement` and `contentSize` — is already expressed in
+   density-independent points (dp), so thresholds are too. Multiplying by
+   `PixelRatio.get()` inflates the threshold by the device's scale factor,
+   making detection fire far too early on high-density screens.
 
    ```tsx
-   import { PixelRatio } from 'react-native';
+   // Correct: dp, identical behaviour on every device.
+   const { isIntersecting } = useScrollToBottom(50);
 
-   const threshold = 50 * PixelRatio.get();
-   const { isIntersecting } = useScrollToBottom(threshold);
+   // Wrong: 3x too large on a 3x screen.
+   // const threshold = 50 * PixelRatio.get();
    ```
 
 ## Debugging Tips

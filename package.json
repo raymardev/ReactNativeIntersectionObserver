@@ -28,6 +28,7 @@
     "build:watch": "tsc --watch",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build && node -e \"require('./dist/index.js'); require('fs').accessSync('dist/index.d.ts')\"",
+    "pretest": "npm run build",
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
