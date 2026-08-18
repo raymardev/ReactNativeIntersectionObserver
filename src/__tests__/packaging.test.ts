@@ -74,6 +74,26 @@ describe('published entry points', () => {
     expect(built.DEFAULT_POSITION).toBe('bottom');
   });
 
+  it('exposes the native-detection API from the built entry point', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const built = require(join(ROOT, manifest.main)) as Record<string, unknown>;
+
+    expect(typeof built.isNativeIntersectionObserverAvailable).toBe('function');
+    expect(typeof built.setNativeIntersectionObserverOverride).toBe('function');
+    // Under plain node there is no platform IntersectionObserver, and the probe
+    // must say so rather than throwing or guessing.
+    const available =
+      built.isNativeIntersectionObserverAvailable as () => boolean;
+    expect(available()).toBe(false);
+  });
+
+  it('compiles the detection and measurement modules into dist', () => {
+    expect(existsSync(join(ROOT, 'dist', 'native.js'))).toBe(true);
+    expect(existsSync(join(ROOT, 'dist', 'native.d.ts'))).toBe(true);
+    expect(existsSync(join(ROOT, 'dist', 'measure.js'))).toBe(true);
+    expect(existsSync(join(ROOT, 'dist', 'measure.d.ts'))).toBe(true);
+  });
+
   it('declares react and react-native as peer dependencies, not dependencies', () => {
     expect(manifest.peerDependencies.react).toBeDefined();
     expect(manifest.peerDependencies['react-native']).toBeDefined();
@@ -85,6 +105,17 @@ describe('published entry points', () => {
 });
 
 describe('runtime dependencies', () => {
+  it('never requires the platform IntersectionObserver', () => {
+    // It is a global on some React Native builds and absent everywhere else, so
+    // importing it (or declaring a version floor for it) would break every
+    // consumer that does not have it.
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { readFileSync } = require('fs') as typeof import('fs');
+    const source = readFileSync(join(ROOT, 'dist', 'native.js'), 'utf8');
+
+    expect(source).not.toMatch(/require\(/);
+  });
+
   it('never pulls react-native into the compiled output', () => {
     // The library imports every react-native symbol with `import type`, so a
     // consumer on the web (or a plain node script) must not trip over a

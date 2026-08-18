@@ -92,6 +92,22 @@ describe('public API surface', () => {
     expect(library.DEFAULT_POSITION).toBe('bottom');
   });
 
+  it('re-exports the measurement and platform-detection helpers', () => {
+    expect(library.readMeasuredRect(0, 920, 300, 100)).toEqual({
+      x: 0,
+      y: 920,
+      width: 300,
+      height: 100,
+    });
+
+    // No platform IntersectionObserver exists under jest, which is what makes
+    // the default strategy the only one these suites exercise implicitly.
+    expect(library.isNativeIntersectionObserverAvailable()).toBe(false);
+    expect(() =>
+      library.setNativeIntersectionObserverOverride(null)
+    ).not.toThrow();
+  });
+
   it('returns exactly the documented shape, with nothing extra', () => {
     const { result } = observe();
 
@@ -99,6 +115,7 @@ describe('public API surface', () => {
       'handleElementLayout',
       'handleScroll',
       'isIntersecting',
+      'measureElement',
       'ref',
       'reset',
     ]);
@@ -106,6 +123,7 @@ describe('public API surface', () => {
     expect(result.current.ref).toHaveProperty('current', null);
     expect(typeof result.current.handleScroll).toBe('function');
     expect(typeof result.current.handleElementLayout).toBe('function');
+    expect(typeof result.current.measureElement).toBe('function');
     expect(typeof result.current.reset).toBe('function');
   });
 });
@@ -512,7 +530,7 @@ describe('render economy', () => {
 });
 
 describe('handler identity', () => {
-  it('keeps the ref and all three functions stable across re-renders', () => {
+  it('keeps the ref and all four functions stable across re-renders', () => {
     const { result, rerender } = observe({ position: 'bottom', threshold: 20 });
     const first = { ...result.current };
 
@@ -530,6 +548,10 @@ describe('handler identity', () => {
     expect(result.current.ref).toBe(first.ref);
     expect(result.current.handleScroll).toBe(first.handleScroll);
     expect(result.current.handleElementLayout).toBe(first.handleElementLayout);
+    // Documented as stable, and consumers put it in dependency arrays and hand
+    // it to memoized rows: an identity that changes per render re-runs their
+    // effects on every parent render.
+    expect(result.current.measureElement).toBe(first.measureElement);
     expect(result.current.reset).toBe(first.reset);
   });
 
@@ -541,6 +563,8 @@ describe('handler identity', () => {
 
     expect(result.current.isIntersecting).toBe(true);
     expect(result.current.handleScroll).toBe(first.handleScroll);
+    expect(result.current.handleElementLayout).toBe(first.handleElementLayout);
+    expect(result.current.measureElement).toBe(first.measureElement);
     expect(result.current.reset).toBe(first.reset);
   });
 });
@@ -892,6 +916,22 @@ describe("position 'custom'", () => {
       horizontal: false,
       distanceToEnd: 20,
     });
+  });
+
+  it('applies a changed predicate immediately, like a changed threshold', () => {
+    const { result, rerender } = observe({
+      position: 'custom',
+      customPredicate: () => false,
+    });
+
+    fireScroll(result, { y: 400 });
+    expect(result.current.isIntersecting).toBe(false);
+
+    rerender({ position: 'custom', customPredicate: () => true });
+    expect(result.current.isIntersecting).toBe(true);
+
+    rerender({ position: 'custom', customPredicate: () => false });
+    expect(result.current.isIntersecting).toBe(false);
   });
 
   it('never intersects — and warns exactly once — without a predicate', () => {

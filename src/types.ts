@@ -47,6 +47,32 @@ export type IntersectionPosition =
   | 'element';
 
 /**
+ * How the intersection is computed for `position: 'element'`.
+ *
+ * - `'scroll'` — always derive the answer from the scroll event payload and the
+ *   tracked view's measured rectangle. This is the default and is the only
+ *   strategy every runtime supports.
+ * - `'auto'` — use the platform `IntersectionObserver` when this runtime has a
+ *   usable one and both the scroll container and the tracked view resolve to
+ *   host nodes (never to a numeric node handle, which is not a node); otherwise
+ *   fall back to `'scroll'` silently.
+ * - `'native'` — the same selection as `'auto'`, but every reason for falling
+ *   back is reported once through a development warning. Intended for verifying
+ *   that the native path is actually being taken.
+ *
+ * The other four positions are statements about `contentOffset`, `contentSize`
+ * and `contentInset` — quantities an `IntersectionObserverEntry` does not carry
+ * — so they are always computed from the scroll payload whatever this is set to.
+ *
+ * @remarks
+ * The native path differs from the scroll path in two documented ways: it
+ * reports an element that is already visible shortly after mount, instead of
+ * waiting for the first scroll event, and its callbacks arrive on a later tick
+ * rather than synchronously inside `onScroll`.
+ */
+export type IntersectionStrategy = 'auto' | 'native' | 'scroll';
+
+/**
  * Which React Native scrollable component the hook's ref is meant for.
  *
  * The value has **no effect on the intersection math** — `ScrollView`,
@@ -154,11 +180,23 @@ export interface UseIntersectionObserverOptions {
   /**
    * Element that will trigger isIntersecting when visible (for position: "element").
    *
-   * The geometry itself comes from
-   * {@link UseIntersectionObserverReturn.handleElementLayout}; this ref is kept for
-   * identity/diagnostics and is what a future `measureLayout`-based path would use.
+   * Attach it to the tracked view. When it is attached — and the hook's own
+   * `ref` is attached to the scroll component — the view is measured against the
+   * scroll content with `measureLayout`, so a view nested inside wrappers,
+   * padding or a list header is tracked correctly.
+   *
+   * Without it (or when the view cannot be measured) the geometry falls back to
+   * {@link UseIntersectionObserverReturn.handleElementLayout}, whose rectangle is
+   * relative to the element's immediate parent.
    */
   element?: RefObject<View | null>;
+  /**
+   * How the intersection is computed, for `position: 'element'` only. Defaults
+   * to `'scroll'`, which is the behaviour every 1.x release shipped.
+   *
+   * See {@link IntersectionStrategy} for what `'auto'` and `'native'` change.
+   */
+  strategy?: IntersectionStrategy;
   /**
    * Track a horizontal scroll view instead of a vertical one. Defaults to `false`.
    *
@@ -252,12 +290,31 @@ export interface UseIntersectionObserverReturn<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   handleElementLayout: (event: any) => void;
   /**
+   * Re-measure the tracked view against the scroll container, for
+   * `position: 'element'`.
+   *
+   * Measurements happen automatically on every layout event and whenever the
+   * content or viewport size changes, so this is only needed when the view moves
+   * for a reason the hook cannot see — a parent animating, a sibling collapsing,
+   * or a scroll container that never emits a layout event for the target.
+   *
+   * Coalesced (at most one measurement is ever in flight), a no-op for every
+   * other position, and stable for the lifetime of the component. It also clears
+   * the automatic retry budget, so it re-attempts even after measurement was
+   * given up on, and abandons a pass that never answered — React Native returns
+   * from `measureLayout` without calling either callback when a shadow node has
+   * gone, and such a pass would otherwise block every later measurement.
+   */
+  measureElement: () => void;
+  /**
    * Function to reset the intersection observer.
    *
    * Sets `isIntersecting` back to `false` without firing any callback, so the next
    * event that computes `true` is a fresh `false -> true` transition that re-fires
    * `onIntersect`. Does not clear the captured element layout or the last scroll
-   * metrics.
+   * metrics — it does not have to: a tracked view that has been unmounted is
+   * noticed on the next event and its rectangle is dropped then, so a view that
+   * is really gone cannot report an intersection again afterwards.
    */
   reset: () => void;
 }
@@ -311,14 +368,23 @@ export interface ScrollToCenterOptions<K extends RefType = RefType>
 export interface ElementIntersectionOptions {
   /** Track a horizontal scroll view. Defaults to `false`. */
   horizontal?: boolean;
+  /**
+   * How the intersection is computed. Defaults to `'scroll'`. See
+   * {@link IntersectionStrategy}.
+   */
+  strategy?: IntersectionStrategy;
 }
 
 /**
- * The rectangle reported by a view's `onLayout`, normalized to finite numbers.
+ * A tracked view's rectangle, normalized to finite numbers and in dp.
  *
  * @remarks
- * `x`/`y` are relative to the element's **parent**, not to the scroll content.
- * See {@link useElementIntersection} for the consequences.
+ * The coordinate space depends on where the rectangle came from. A measured
+ * rectangle (the `element` ref plus an attached scroll ref) is relative to the
+ * **scroll content**, which is the space `contentOffset` lives in. An `onLayout`
+ * rectangle — the fallback — is relative to the element's immediate **parent**,
+ * so it is only equivalent when the tracked view is a direct child of the scroll
+ * content. See {@link useElementIntersection}.
  */
 export interface ElementLayout {
   x: number;

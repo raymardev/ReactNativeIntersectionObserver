@@ -15,6 +15,12 @@
  *   state completely untouched. Returning `false` in those cases would be a lie
  *   and would make the first genuine `true` look like a transition when it is
  *   really the first reading.
+ *
+ * The distinction is exactly "never measured" versus "measured and not
+ * intersecting", and it is the same on both decision paths: a tracked view that
+ * has been measured and collapsed to nothing — or that is no longer rendered at
+ * all — is `false`, never `null`. The native adapter in `./native` mirrors this
+ * rule entry for entry.
  */
 
 import type {
@@ -222,6 +228,58 @@ export function readElementLayout(event: unknown): ElementLayout | null {
 }
 
 /**
+ * Normalize the four numbers a `measureLayout` pass reports.
+ *
+ * @param x - Distance from the reference view's left edge, in dp.
+ * @param y - Distance from the reference view's top edge, in dp.
+ * @param width - Measured width, in dp.
+ * @param height - Measured height, in dp.
+ * @returns An {@link ElementLayout} in the reference view's coordinate space, or
+ * `null` when the measurement is unusable.
+ *
+ * @remarks
+ * `null` means "unusable", not "empty": it is returned only for a non-finite
+ * value, which is what a detached view reports and the one thing a caller must
+ * never cache. A rectangle with no extent is a **measurement**, not a failure —
+ * a tracked view hidden with `display: 'none'`, or emptied of children, lays out
+ * as `0x0` and reports it — so it is passed through and
+ * {@link computeIntersection} turns it into `false`. Discarding it here would
+ * leave the last good rectangle in place and latch an observer that is already
+ * `true`.
+ *
+ * This is the `measureLayout` counterpart of {@link readElementLayout}, which
+ * normalizes an `onLayout` event instead.
+ *
+ * @example
+ * ```ts
+ * readMeasuredRect(0, 920, 300, 100); // { x: 0, y: 920, width: 300, height: 100 }
+ * readMeasuredRect(0, 100, 0, 0); // { x: 0, y: 100, width: 0, height: 0 }
+ * readMeasuredRect(0, Number.NaN, 300, 100); // null
+ * ```
+ */
+export function readMeasuredRect(
+  x: unknown,
+  y: unknown,
+  width: unknown,
+  height: unknown
+): ElementLayout | null {
+  if (
+    typeof x !== 'number' ||
+    typeof y !== 'number' ||
+    typeof width !== 'number' ||
+    typeof height !== 'number' ||
+    !Number.isFinite(x) ||
+    !Number.isFinite(y) ||
+    !Number.isFinite(width) ||
+    !Number.isFinite(height)
+  ) {
+    return null;
+  }
+
+  return { x, y, width, height };
+}
+
+/**
  * Project {@link ScrollMetrics} onto the active scroll axis and precompute the
  * distances every built-in position is expressed in terms of.
  *
@@ -237,7 +295,10 @@ export function readElementLayout(event: unknown): ElementLayout | null {
  * @example
  * ```ts
  * const m = projectMetrics(metrics, 20, false);
- * m.distanceToEnd; // contentSize.height - (contentOffset.y + layoutMeasurement.height)
+ * // contentSize.height + contentInset.bottom - (contentOffset.y + layoutMeasurement.height)
+ * m.distanceToEnd;
+ * // contentOffset.y + contentInset.top
+ * m.distanceFromStart;
  * ```
  */
 export function projectMetrics(
@@ -288,7 +349,9 @@ export function projectMetrics(
  * with zero-sized measurements during initial layout, and without the guard the
  * `'bottom'` predicate reads `0 - 0 <= 20` as `true` and fires a phantom
  * `onIntersect` (and, in the documented infinite-scroll example, a phantom page
- * load) on mount.
+ * load) on mount. It applies to `'top'` and `'center'` as well, deliberately: an
+ * unmeasured scroll view would otherwise read `0 <= 20` and report "at the top"
+ * before anything has been laid out, which is a guess rather than a measurement.
  *
  * Documented behaviours worth knowing:
  * - Content shorter than the viewport is `true` for `'bottom'` (you are already
@@ -304,6 +367,9 @@ export function projectMetrics(
  * - `contentInset` is folded into `'top'` and `'bottom'` (an iOS large-title header
  *   or `RefreshControl` makes the resting offset `-contentInset.top`, not `0`) but
  *   deliberately not into `'center'`, where both centers shift together.
+ * - For `'element'`, `null` means "no rectangle has ever been captured". Once one
+ *   has been, a rectangle with no extent on the active axis is a decision —
+ *   `false` — because a collapsed or unmounted view is genuinely not visible.
  *
  * @example
  * ```ts
@@ -342,13 +408,20 @@ export function computeIntersection(
       if (!layout) {
         return null;
       }
-      // A degenerate rect means the view is unmounted or not yet measured.
-      if (layout.width <= 0 && layout.height <= 0) {
-        return null;
-      }
 
       const elementStart = horizontal ? layout.x : layout.y;
       const elementSize = horizontal ? layout.width : layout.height;
+
+      // A view with no extent on the active axis cannot overlap the viewport.
+      // The projection matters: a view collapsed to zero height but still full
+      // width is the normal React Native collapse shape, and testing both axes
+      // at once would let it through. This is a real `false` rather than a
+      // `null`, so an observer that is currently `true` reports the element
+      // disappearing instead of latching forever.
+      if (elementSize <= 0) {
+        return false;
+      }
+
       const elementEnd = elementStart + elementSize;
 
       // The threshold expands the viewport by `threshold` on each edge; any

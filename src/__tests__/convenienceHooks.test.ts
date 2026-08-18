@@ -76,6 +76,7 @@ describe('return shape', () => {
       'handleElementLayout',
       'handleScroll',
       'isIntersecting',
+      'measureElement',
       'ref',
       'reset',
     ]);
@@ -83,6 +84,7 @@ describe('return shape', () => {
     expect(result.current.ref).toHaveProperty('current', null);
     expect(typeof result.current.handleScroll).toBe('function');
     expect(typeof result.current.handleElementLayout).toBe('function');
+    expect(typeof result.current.measureElement).toBe('function');
     expect(typeof result.current.reset).toBe('function');
   });
 });

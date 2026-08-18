@@ -449,7 +449,9 @@ describe("position 'element'", () => {
     expect(computeIntersection(metrics({ y: 0 }), element, null)).toBeNull();
   });
 
-  it('returns null for a fully degenerate rectangle', () => {
+  it('reports a fully degenerate rectangle as not intersecting', () => {
+    // A captured rectangle with no extent is a real answer, not a missing one:
+    // an observer that is already `true` has to see the element disappear.
     expect(
       computeIntersection(metrics({ y: 0 }), element, {
         x: 0,
@@ -457,7 +459,7 @@ describe("position 'element'", () => {
         width: 0,
         height: 0,
       })
-    ).toBeNull();
+    ).toBe(false);
   });
 
   it('is false while the element is below the expanded viewport', () => {
@@ -504,11 +506,9 @@ describe("position 'element'", () => {
     expect(computeIntersection(metrics({ y: 249 }), inset, rect)).toBe(false);
   });
 
-  it('reports a collapsed (zero-height) element as intersecting — known quirk', () => {
-    // The degenerate guard requires BOTH width and height to be non-positive,
-    // so a view collapsed to height 0 in a vertical list still counts as
-    // visible. Pinned here so the behaviour cannot change silently; arguably it
-    // should be false on the projected axis.
+  it('reports an element collapsed on the active axis as not intersecting', () => {
+    // The normal React Native collapse shape is zero height at full width, so
+    // the guard projects onto the active axis before testing it.
     expect(
       computeIntersection(metrics({ y: 0 }), element, {
         x: 0,
@@ -516,7 +516,26 @@ describe("position 'element'", () => {
         width: 300,
         height: 0,
       })
+    ).toBe(false);
+  });
+
+  it('ignores a collapse on the inactive axis', () => {
+    // Zero width says nothing about a vertical observer, and vice versa.
+    expect(
+      computeIntersection(metrics({ y: 0 }), element, {
+        x: 0,
+        y: 500,
+        width: 0,
+        height: 100,
+      })
     ).toBe(true);
+    expect(
+      computeIntersection(
+        metrics({ x: 0, contentW: 2000, layoutW: 400 }),
+        { position: 'element', horizontal: true },
+        { x: 100, y: 0, width: 0, height: 300 }
+      )
+    ).toBe(false);
   });
 
   it('checks only the active axis', () => {

@@ -21,9 +21,11 @@ import { FlatList, ScrollView, SectionList, Text, View } from 'react-native';
 
 import {
   useElementIntersection,
+  useIntersectionObserver,
   useScrollToBottom,
   useScrollToTop,
 } from '../index';
+import type { UseIntersectionObserverReturn } from '../types';
 import { MAX_OFFSET, layoutEvent, scrollEvent } from './support/events';
 
 interface ScreenProps {
@@ -127,6 +129,94 @@ function ElementScreen({ onIntersect }: ScreenProps) {
   );
 }
 
+interface NestedScreenProps extends ScreenProps {
+  onReady?: (refs: { scroll: unknown; target: unknown }) => void;
+}
+
+/**
+ * The tracked view nested inside a card, which is the shape `onLayout` alone
+ * cannot handle: its rectangle is reported relative to the card, not to the
+ * scroll content.
+ */
+function NestedElementScreen({ onIntersect, onReady }: NestedScreenProps) {
+  const elementRef = useRef<View>(null);
+  const { isIntersecting, ref, handleScroll, handleElementLayout } =
+    useElementIntersection(elementRef, 20, { onIntersect });
+
+  useEffect(() => {
+    onReady?.({ scroll: ref.current, target: elementRef.current });
+  }, [onReady, ref]);
+
+  return (
+    <ScrollView
+      testID="scrollview"
+      ref={ref}
+      onScroll={handleScroll}
+      scrollEventThrottle={16}
+    >
+      <View style={{ height: 900 }} />
+      <View testID="card">
+        <View
+          testID="target"
+          ref={elementRef}
+          onLayout={handleElementLayout}
+          style={{ height: 100, marginTop: 20 }}
+        >
+          <Text testID="status">{isIntersecting ? 'visible' : 'hidden'}</Text>
+        </View>
+      </View>
+    </ScrollView>
+  );
+}
+
+/** Dispatches a scroll event from a passive effect, as a child component. */
+function ScrollFromEffect({
+  observer,
+  y,
+}: {
+  observer: UseIntersectionObserverReturn;
+  y: number;
+}) {
+  useEffect(() => {
+    observer.handleScroll(scrollEvent({ y }));
+  }, [observer, y]);
+
+  return null;
+}
+
+function FreshCallbackScreen({
+  y,
+  onIntersect,
+}: {
+  y: number;
+  onIntersect: () => void;
+}) {
+  const observer = useIntersectionObserver({ position: 'bottom', onIntersect });
+
+  return <ScrollFromEffect observer={observer} y={y} />;
+}
+
+describe('callback freshness', () => {
+  it('never calls a callback from a render that has already been replaced', () => {
+    // A child's passive effect runs before the parent's, so an event dispatched
+    // from one lands in the window between the commit and the parent's passive
+    // flush. The hook syncs its options in a layout effect precisely so that
+    // window cannot see the previous render's callbacks.
+    const first = jest.fn();
+    const second = jest.fn();
+
+    const { rerender } = render(
+      <FreshCallbackScreen y={0} onIntersect={first} />
+    );
+    expect(first).not.toHaveBeenCalled();
+
+    rerender(<FreshCallbackScreen y={MAX_OFFSET} onIntersect={second} />);
+
+    expect(second).toHaveBeenCalledTimes(1);
+    expect(first).not.toHaveBeenCalled();
+  });
+});
+
 describe('ScrollView', () => {
   it('attaches the returned ref to a real ScrollView instance', () => {
     const onAttached = jest.fn();
@@ -203,6 +293,75 @@ describe('SectionList', () => {
       scrollEvent({ y: 500 })
     );
     expect(screen.getByTestId('status')).toHaveTextContent('scrolled');
+  });
+});
+
+describe('useElementIntersection with a nested tracked view', () => {
+  it('measures the tracked view against the scroll content, not against its card', () => {
+    // The target sits 20dp inside a card that starts at y=900, so its content
+    // space position is 920 and the onLayout rectangle says 20. Deciding from
+    // the onLayout value would report it visible at offset 0, 900dp early.
+    const onIntersect = jest.fn();
+    const contentView = { id: 'content-container' };
+    const measureLayout = jest.fn(
+      (
+        _reference: unknown,
+        onSuccess: (x: number, y: number, w: number, h: number) => void
+      ) => {
+        onSuccess(0, 920, 300, 100);
+      }
+    );
+
+    render(
+      <NestedElementScreen
+        onIntersect={onIntersect}
+        onReady={({ scroll, target }) => {
+          // React Native's own jest mocks answer these with `undefined`, so the
+          // instances are given the shapes a real ScrollView and a real host
+          // view expose.
+          (scroll as { getInnerViewRef: () => unknown }).getInnerViewRef = () =>
+            contentView;
+          (target as { measureLayout: unknown }).measureLayout = measureLayout;
+        }}
+      />
+    );
+
+    fireEvent(
+      screen.getByTestId('target'),
+      'layout',
+      layoutEvent({ x: 0, y: 20, width: 300, height: 100 })
+    );
+    expect(measureLayout).toHaveBeenCalledTimes(1);
+    expect(measureLayout.mock.calls[0][0]).toBe(contentView);
+
+    fireEvent.scroll(screen.getByTestId('scrollview'), scrollEvent({ y: 0 }));
+    expect(screen.getByTestId('status')).toHaveTextContent('hidden');
+    expect(onIntersect).not.toHaveBeenCalled();
+
+    // 920 <= 100 + 800 + 20 — the exact edge.
+    fireEvent.scroll(screen.getByTestId('scrollview'), scrollEvent({ y: 100 }));
+    expect(screen.getByTestId('status')).toHaveTextContent('visible');
+    expect(onIntersect).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls back to the onLayout rectangle when the container cannot be resolved', () => {
+    // React Native's ScrollView mock answers every host accessor with
+    // `undefined`, which is exactly the "cannot measure" case: the observer has
+    // to keep working from the layout event alone.
+    const onIntersect = jest.fn();
+    render(<NestedElementScreen onIntersect={onIntersect} />);
+
+    fireEvent(
+      screen.getByTestId('target'),
+      'layout',
+      layoutEvent({ x: 0, y: 920, width: 300, height: 100 })
+    );
+    fireEvent.scroll(screen.getByTestId('scrollview'), scrollEvent({ y: 0 }));
+    expect(screen.getByTestId('status')).toHaveTextContent('hidden');
+
+    fireEvent.scroll(screen.getByTestId('scrollview'), scrollEvent({ y: 100 }));
+    expect(screen.getByTestId('status')).toHaveTextContent('visible');
+    expect(onIntersect).toHaveBeenCalledTimes(1);
   });
 });
 
