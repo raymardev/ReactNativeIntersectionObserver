@@ -17,7 +17,7 @@ The main hook that provides intersection detection functionality for React Nativ
 | `options.onVisible`            | `() => void`                                             | `undefined` | Callback when intersection ends (element becomes hidden)    |
 | `options.onIntersectionChange` | `(isIntersecting: boolean) => void`                      | `undefined` | Callback for any intersection change                        |
 | `options.horizontal`           | `boolean`                                                | `false`     | Track a horizontal scroll view; `top`/`bottom` become the start/end edge |
-| `options.strategy`             | `'auto' \| 'native' \| 'scroll'`                         | `'scroll'`  | How the intersection is computed. Only honoured for `position: 'element'` |
+| `options.strategy`             | `'auto' \| 'native' \| 'scroll'`                         | `'auto'`    | How the intersection is computed. Only honoured for `position: 'element'` |
 | `options.customPredicate`      | `(metrics: IntersectionMetrics) => boolean`              | `undefined` | Required by `position: 'custom'`; evaluated on every scroll event |
 
 #### Returns
@@ -230,9 +230,20 @@ always use the scroll path.
 
 | `strategy`  | Behaviour                                                                 |
 | ----------- | ------------------------------------------------------------------------- |
-| `'scroll'`  | Default. Always uses the scroll-event path.                               |
-| `'auto'`    | Uses the platform observer when one is available, otherwise falls back.   |
-| `'native'`  | Same as `'auto'`, but warns in development when no observer is available. |
+| `'auto'`    | Default. Uses the platform observer when one is available, otherwise falls back silently. |
+| `'native'`  | Same selection as `'auto'`, but reports every reason for falling back through a development warning. |
+| `'scroll'`  | Always uses the scroll-event path, on every runtime.                      |
+
+On stable React Native and Expo there is no platform observer, so `'auto'` is
+indistinguishable from `'scroll'`. Where one does exist, the native path differs
+in two ways worth knowing before you rely on it:
+
+- it reports an element that is **already visible shortly after mount**, rather
+  than waiting for the first scroll event;
+- its callbacks arrive **on a later tick**, rather than synchronously inside
+  `onScroll`.
+
+Pass `strategy: 'scroll'` if you need identical behaviour on every runtime.
 
 ```tsx
 import {

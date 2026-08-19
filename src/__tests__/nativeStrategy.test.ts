@@ -120,7 +120,26 @@ afterEach(() => {
 });
 
 describe('strategy selection', () => {
-  it('never builds an observer by default, however available the platform one is', () => {
+  it('builds an observer by default when the platform provides one', () => {
+    // The default is 'auto', so a runtime that has a usable observer gets it
+    // without the caller opting in.
+    const element = trackedView();
+    const { result } = observe({ position: 'element', element });
+
+    attachScrollRef(result, scrollInstance());
+    fireScroll(result, { y: 0 });
+
+    expect(FakeIntersectionObserver.instances).toHaveLength(1);
+    expect(FakeIntersectionObserver.last?.targets).toEqual([element.current]);
+    // 'auto' never explains itself; only 'native' reports a fallback.
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the scroll path by default when there is no platform one', () => {
+    // The case that covers every stable React Native and Expo runtime today:
+    // the default must be indistinguishable from 'scroll' there.
+    setNativeIntersectionObserverOverride(false);
+
     const element = trackedView();
     const { result } = observe({ position: 'element', element });
 
@@ -129,7 +148,23 @@ describe('strategy selection', () => {
     fireScroll(result, { y: 180 });
 
     expect(FakeIntersectionObserver.instances).toHaveLength(0);
-    // ...and the scroll path still decides, exactly as in 1.x.
+    expect(result.current.isIntersecting).toBe(true);
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it("pins the scroll path when asked for it explicitly", () => {
+    const element = trackedView();
+    const { result } = observe({
+      position: 'element',
+      element,
+      strategy: 'scroll',
+    });
+
+    attachScrollRef(result, scrollInstance());
+    fireLayout(result, { x: 0, y: 1000, width: 300, height: 100 });
+    fireScroll(result, { y: 180 });
+
+    expect(FakeIntersectionObserver.instances).toHaveLength(0);
     expect(result.current.isIntersecting).toBe(true);
     expect(warnSpy).not.toHaveBeenCalled();
   });

@@ -227,8 +227,10 @@ const NATIVE_SILENT_MESSAGE =
  * @param options.element - Ref to the tracked view, for `position: 'element'`.
  * When it is attached the view is measured against the scroll content, so it may
  * be nested arbitrarily deep.
- * @param options.strategy - `'scroll' | 'auto' | 'native'`, for
- * `position: 'element'`. Defaults to `'scroll'`.
+ * @param options.strategy - `'auto' | 'native' | 'scroll'`, for
+ * `position: 'element'`. Defaults to `'auto'`: the platform
+ * `IntersectionObserver` is used when the runtime has a usable one, and the
+ * scroll path is used otherwise. Pass `'scroll'` to pin the scroll path.
  * @param options.horizontal - Track a horizontal scroll view. Defaults to `false`.
  * @param options.customPredicate - Required for `position: 'custom'`; decides the
  * boolean from the normalized metrics.
@@ -292,7 +294,7 @@ export function useIntersectionObserver<
     position = DEFAULT_POSITION,
     element,
     horizontal = false,
-    strategy = 'scroll',
+    strategy = 'auto',
     customPredicate,
     onIntersect,
     onVisible,

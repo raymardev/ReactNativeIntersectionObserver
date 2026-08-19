@@ -192,9 +192,13 @@ export interface UseIntersectionObserverOptions {
   element?: RefObject<View | null>;
   /**
    * How the intersection is computed, for `position: 'element'` only. Defaults
-   * to `'scroll'`, which is the behaviour every 1.x release shipped.
+   * to `'auto'`.
    *
-   * See {@link IntersectionStrategy} for what `'auto'` and `'native'` change.
+   * On a runtime with no platform `IntersectionObserver` — stable React Native
+   * and Expo today — `'auto'` is indistinguishable from `'scroll'`. Where one
+   * does exist, the two documented differences in
+   * {@link IntersectionStrategy} apply. Pass `'scroll'` to pin the scroll path
+   * and get identical behaviour on every runtime.
    */
   strategy?: IntersectionStrategy;
   /**
@@ -369,7 +373,7 @@ export interface ElementIntersectionOptions {
   /** Track a horizontal scroll view. Defaults to `false`. */
   horizontal?: boolean;
   /**
-   * How the intersection is computed. Defaults to `'scroll'`. See
+   * How the intersection is computed. Defaults to `'auto'`. See
    * {@link IntersectionStrategy}.
    */
   strategy?: IntersectionStrategy;
