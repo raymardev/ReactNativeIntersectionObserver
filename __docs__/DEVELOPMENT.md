@@ -280,7 +280,7 @@ export function useScrollToBottom(
 // ✅ Good: Complete, runnable examples
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import { useScrollToBottom } from 'react-native-intersection-observer';
+import { useScrollToBottom } from '@raymardev/react-native-intersection-observer';
 
 export default function Example() {
   const { isIntersecting, ref, handleScroll } = useScrollToBottom(50, {

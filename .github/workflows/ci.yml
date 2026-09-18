@@ -6,13 +6,18 @@ on:
   pull_request:
     branches: [main, master]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  # Never cancel a push to a release branch mid-publish; only supersede PR runs.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        node-version: [16.x, 18.x, 20.x]
+        node-version: [18.x, 20.x, 22.x]
 
     steps:
       - uses: actions/checkout@v4
@@ -24,13 +29,13 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci
 
       - name: Run linter
         run: npm run lint
 
-      # - name: Run tests
-      #   run: npm test
+      - name: Run tests
+        run: npm test -- --ci --coverage --runInBand
 
       - name: Build package
         run: npm run build
@@ -42,29 +47,45 @@ jobs:
           test -f dist/index.d.ts
           test -f dist/types.js
           test -f dist/types.d.ts
+          node -e "require('./dist/index.js')"
 
-  publish:
+  # Single publishing path: semantic-release owns the version bump, the git tag,
+  # the GitHub release and `npm publish`. Nothing else in this repo publishes.
+  release:
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+
+    concurrency:
+      group: publish-${{ github.repository }}
+      cancel-in-progress: false
+
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
+          node-version-file: '.nvmrc'
           cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci
 
       - name: Build package
         run: npm run build
 
-      - name: Publish to npm
-        run: npm publish
+      - name: Release
+        run: npx semantic-release
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

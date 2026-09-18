@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Initial release of `react-native-intersection-observer`
+- Initial release of `@raymardev/react-native-intersection-observer`
 - Core `useIntersectionObserver` hook with full functionality
 - Convenience hooks:
   - `useScrollToBottom` - Detect when user scrolls to bottom

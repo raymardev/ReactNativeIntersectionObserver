@@ -106,7 +106,9 @@ tmp/
 temp/
 
 # App files (not needed for library)
-App.tsx
-app.json
-index.ts
-assets/
+# Anchored to the repo root: unanchored patterns match a basename at ANY
+# depth, which silently ignored the library's own src/index.ts.
+/App.tsx
+/app.json
+/index.ts
+/assets/
