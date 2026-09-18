@@ -1,6 +1,6 @@
 {
   "name": "@raymardev/react-native-intersection-observer",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A powerful React Native hook for detecting scroll intersections with ScrollView, FlatList, and SectionList components",
   "main": "dist/index.js",
   "react-native": "dist/index.js",
